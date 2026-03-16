@@ -1,33 +1,56 @@
+# services:
+#   app-dev:
+#     image: saurav11sarkardev/nestjs-app:dev
+#     env_file:
+#       - .env
+#     container_name: nestjs-dev
+#     build:
+#       context: .
+#       target: development
+#     ports:
+#       - '5000:5000'
+#     volumes:
+#       - .:/app
+#       - /app/node_modules
+#     environment:
+#       - NODE_ENV=development
+#     command: npm run start:dev
+#     profiles: ['dev']
+
+#   app-prod:
+#     image: saurav11sarkardev/nestjs-app:prod
+#     env_file:
+#       - .env
+#     container_name: nestjs-prod
+#     build:
+#       context: .
+#       target: production
+#     ports:
+#       - '5000:5000'
+#     environment:
+#       - NODE_ENV=production
+#     restart: unless-stopped
+#     profiles: ['prod']
+
+version: '3.9'
+
 services:
-  app-dev:
-    image: saurav11sarkardev/nestjs-app:dev
-    env_file:
-      - .env
-    container_name: nestjs-dev
+  app:
     build:
       context: .
       target: development
+    container_name: nestjs_app
+    restart: unless-stopped
     ports:
-      - '5000:5000'
+      - '${PORT:-5000}:5000'
+    env_file:
+      - .env
     volumes:
       - .:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
-    command: npm run start:dev
-    profiles: ['dev']
+    networks:
+      - app-network
 
-  app-prod:
-    image: saurav11sarkardev/nestjs-app:prod
-    env_file:
-      - .env
-    container_name: nestjs-prod
-    build:
-      context: .
-      target: production
-    ports:
-      - '5000:5000'
-    environment:
-      - NODE_ENV=production
-    restart: unless-stopped
-    profiles: ['prod']
+networks:
+  app-network:
+    driver: bridge
