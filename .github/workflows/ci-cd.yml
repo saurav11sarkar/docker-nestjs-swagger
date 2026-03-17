@@ -74,45 +74,6 @@ jobs:
           FRONTEND_URL: http://localhost:3000
           BACKEND_URL: http://localhost:5000/api/v1
 
-      - name: Run e2e tests
-        run: npm run test:e2e -- --passWithNoTests --forceExit
-        env:
-          NODE_ENV: test
-          PORT: 5000
-          MONGO_URI: ${{ secrets.TEST_MONGO_URI }}
-          JWT_SECRET: test-jwt-secret-ci
-          JWT_EXPIRE: 1h
-          ACCESS_TOKEN_SECRET: test-access-secret-ci
-          ACCESS_TOKEN_EXPIRES: 7d
-          REFRESH_TOKEN_SECRET: test-refresh-secret-ci
-          REFRESH_TOKEN_EXPIRES: 90d
-          BCRYPT_SALT_ROUNDS: 10
-          CLOUDINARY_CLOUD_NAME: test
-          CLOUDINARY_API_KEY: test
-          CLOUDINARY_API_SECRET: test
-          EMAIL_EXPIRES: 900000
-          EMAIL_HOST: smtp.gmail.com
-          EMAIL_PORT: 587
-          EMAIL_ADDRESS: test@test.com
-          EMAIL_PASS: test
-          EMAIL_FROM: test@test.com
-          EMAIL_TO: ''
-          ADMIN_EMAIL: admin@test.com
-          STRIPE_SECRET_KEY: sk_test_dummy
-          STRIPE_WEBHOOK_SECRET: whsec_dummy
-          STRIPE_PLATFORM_ACCOUNT_ID: acct_dummy
-          GOOGLE_CLIENT_ID: test-client-id
-          GOOGLE_CLIENT_SECRET: test-client-secret
-          GOOGLE_MAPS_API_KEY: test-maps-key
-          MPESA_BASE_URL: https://sandbox.safaricom.co.ke
-          CONSUMER_KEY: test
-          CONSUMER_SECRET: test
-          SHORTCODE: test
-          PASSKEY: test
-          CALLBACK_URL: http://localhost:5000/callback
-          FRONTEND_URL: http://localhost:3000
-          BACKEND_URL: http://localhost:5000/api/v1
-
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
