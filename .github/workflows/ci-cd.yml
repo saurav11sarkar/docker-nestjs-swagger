@@ -11,9 +11,10 @@ env:
   NODE_VERSION: '20'
 
 jobs:
-  # ════════════════════════════════════════
-  #  JOB 1 — TEST
-  # ════════════════════════════════════════
+
+# ════════════════════════════════════════
+#  JOB 1 — TEST
+# ════════════════════════════════════════
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -40,7 +41,7 @@ jobs:
         env:
           NODE_ENV: test
           PORT: 5000
-          MONGO_URI: ${{ secrets.TEST_MONGO_URI }}
+          MONGO_URI: mongodb://localhost/testdb
           JWT_SECRET: test-jwt-secret-ci
           JWT_EXPIRE: 1h
           ACCESS_TOKEN_SECRET: test-access-secret-ci
@@ -74,15 +75,9 @@ jobs:
           FRONTEND_URL: http://localhost:3000
           BACKEND_URL: http://localhost:5000/api/v1
 
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
-
-  # ════════════════════════════════════════
-  #  JOB 2 — BUILD & PUSH
-  # ════════════════════════════════════════
+# ════════════════════════════════════════
+#  JOB 2 — BUILD & PUSH
+# ════════════════════════════════════════
   build:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
@@ -126,148 +121,80 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ════════════════════════════════════════
-  #  JOB 3 — DEPLOY STAGING
-  # ════════════════════════════════════════
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/develop'
-    environment: staging
+# ════════════════════════════════════════
+#  JOB 3 & 4 — DEPLOY
+#  এই দুটো job এখন disabled আছে
+#  server ready হলে নিচের # সরিয়ে দাও
+# ════════════════════════════════════════
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+#  deploy-staging:
+#    name: Deploy to Staging
+#    runs-on: ubuntu-latest
+#    needs: build
+#    if: github.ref == 'refs/heads/develop'
+#    environment: staging
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#      - name: Copy compose file to server
+#        uses: appleboy/scp-action@v0.1.7
+#        with:
+#          host: ${{ secrets.STAGING_HOST }}
+#          username: ${{ secrets.STAGING_USER }}
+#          key: ${{ secrets.STAGING_SSH_KEY }}
+#          source: 'docker-compose.prod.yml'
+#          target: '/opt/app'
+#      - name: Deploy
+#        uses: appleboy/ssh-action@v1.0.0
+#        with:
+#          host: ${{ secrets.STAGING_HOST }}
+#          username: ${{ secrets.STAGING_USER }}
+#          key: ${{ secrets.STAGING_SSH_KEY }}
+#          script: |
+#            cd /opt/app
+#            cat > .env << ENVEOF
+#            NODE_ENV=staging
+#            MONGO_URI=${{ secrets.STAGING_MONGO_URI }}
+#            JWT_SECRET=${{ secrets.STAGING_JWT_SECRET }}
+#            DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
+#            IMAGE_TAG=${{ needs.build.outputs.image_tag }}
+#            ENVEOF
+#            docker compose -f docker-compose.prod.yml pull
+#            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+#            docker image prune -f
 
-      - name: Copy compose file to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.STAGING_HOST }}
-          username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY }}
-          source: 'docker-compose.prod.yml'
-          target: '/opt/app'
-
-      - name: Deploy to staging server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.STAGING_HOST }}
-          username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY }}
-          script: |
-            cd /opt/app
-            cat > .env << ENVEOF
-            NODE_ENV=staging
-            PORT=5000
-            MONGO_URI=${{ secrets.STAGING_MONGO_URI }}
-            JWT_SECRET=${{ secrets.STAGING_JWT_SECRET }}
-            JWT_EXPIRE=${{ secrets.JWT_EXPIRE }}
-            ACCESS_TOKEN_SECRET=${{ secrets.STAGING_ACCESS_TOKEN_SECRET }}
-            ACCESS_TOKEN_EXPIRES=${{ secrets.ACCESS_TOKEN_EXPIRES }}
-            REFRESH_TOKEN_SECRET=${{ secrets.STAGING_REFRESH_TOKEN_SECRET }}
-            REFRESH_TOKEN_EXPIRES=${{ secrets.REFRESH_TOKEN_EXPIRES }}
-            BCRYPT_SALT_ROUNDS=${{ secrets.BCRYPT_SALT_ROUNDS }}
-            CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
-            CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
-            CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
-            EMAIL_EXPIRES=${{ secrets.EMAIL_EXPIRES }}
-            EMAIL_HOST=${{ secrets.EMAIL_HOST }}
-            EMAIL_PORT=${{ secrets.EMAIL_PORT }}
-            EMAIL_ADDRESS=${{ secrets.EMAIL_ADDRESS }}
-            EMAIL_PASS=${{ secrets.EMAIL_PASS }}
-            EMAIL_FROM=${{ secrets.EMAIL_FROM }}
-            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
-            STRIPE_SECRET_KEY=${{ secrets.STAGING_STRIPE_SECRET_KEY }}
-            STRIPE_WEBHOOK_SECRET=${{ secrets.STAGING_STRIPE_WEBHOOK_SECRET }}
-            STRIPE_PLATFORM_ACCOUNT_ID=${{ secrets.STRIPE_PLATFORM_ACCOUNT_ID }}
-            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}
-            MPESA_BASE_URL=${{ secrets.MPESA_BASE_URL }}
-            CONSUMER_KEY=${{ secrets.CONSUMER_KEY }}
-            CONSUMER_SECRET=${{ secrets.CONSUMER_SECRET }}
-            SHORTCODE=${{ secrets.SHORTCODE }}
-            PASSKEY=${{ secrets.PASSKEY }}
-            CALLBACK_URL=${{ secrets.STAGING_CALLBACK_URL }}
-            FRONTEND_URL=${{ secrets.STAGING_FRONTEND_URL }}
-            BACKEND_URL=${{ secrets.STAGING_BACKEND_URL }}
-            DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
-            IMAGE_TAG=${{ needs.build.outputs.image_tag }}
-            ENVEOF
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
-            docker image prune -f
-
-  # ════════════════════════════════════════
-  #  JOB 4 — DEPLOY PRODUCTION
-  # ════════════════════════════════════════
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    environment: production
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Copy compose file to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          source: 'docker-compose.prod.yml'
-          target: '/opt/app'
-
-      - name: Deploy to production server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          script: |
-            cd /opt/app
-            cat > .env << ENVEOF
-            NODE_ENV=production
-            PORT=5000
-            MONGO_URI=${{ secrets.PROD_MONGO_URI }}
-            JWT_SECRET=${{ secrets.PROD_JWT_SECRET }}
-            JWT_EXPIRE=${{ secrets.JWT_EXPIRE }}
-            ACCESS_TOKEN_SECRET=${{ secrets.PROD_ACCESS_TOKEN_SECRET }}
-            ACCESS_TOKEN_EXPIRES=${{ secrets.ACCESS_TOKEN_EXPIRES }}
-            REFRESH_TOKEN_SECRET=${{ secrets.PROD_REFRESH_TOKEN_SECRET }}
-            REFRESH_TOKEN_EXPIRES=${{ secrets.REFRESH_TOKEN_EXPIRES }}
-            BCRYPT_SALT_ROUNDS=${{ secrets.BCRYPT_SALT_ROUNDS }}
-            CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
-            CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
-            CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
-            EMAIL_EXPIRES=${{ secrets.EMAIL_EXPIRES }}
-            EMAIL_HOST=${{ secrets.EMAIL_HOST }}
-            EMAIL_PORT=${{ secrets.EMAIL_PORT }}
-            EMAIL_ADDRESS=${{ secrets.EMAIL_ADDRESS }}
-            EMAIL_PASS=${{ secrets.EMAIL_PASS }}
-            EMAIL_FROM=${{ secrets.EMAIL_FROM }}
-            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
-            STRIPE_SECRET_KEY=${{ secrets.PROD_STRIPE_SECRET_KEY }}
-            STRIPE_WEBHOOK_SECRET=${{ secrets.PROD_STRIPE_WEBHOOK_SECRET }}
-            STRIPE_PLATFORM_ACCOUNT_ID=${{ secrets.STRIPE_PLATFORM_ACCOUNT_ID }}
-            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}
-            MPESA_BASE_URL=${{ secrets.MPESA_BASE_URL }}
-            CONSUMER_KEY=${{ secrets.CONSUMER_KEY }}
-            CONSUMER_SECRET=${{ secrets.CONSUMER_SECRET }}
-            SHORTCODE=${{ secrets.SHORTCODE }}
-            PASSKEY=${{ secrets.PASSKEY }}
-            CALLBACK_URL=${{ secrets.PROD_CALLBACK_URL }}
-            FRONTEND_URL=${{ secrets.PROD_FRONTEND_URL }}
-            BACKEND_URL=${{ secrets.PROD_BACKEND_URL }}
-            DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
-            IMAGE_TAG=${{ needs.build.outputs.image_tag }}
-            ENVEOF
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
-            docker image prune -f
+#  deploy-production:
+#    name: Deploy to Production
+#    runs-on: ubuntu-latest
+#    needs: build
+#    if: github.ref == 'refs/heads/main'
+#    environment: production
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#      - name: Copy compose file to server
+#        uses: appleboy/scp-action@v0.1.7
+#        with:
+#          host: ${{ secrets.PROD_HOST }}
+#          username: ${{ secrets.PROD_USER }}
+#          key: ${{ secrets.PROD_SSH_KEY }}
+#          source: 'docker-compose.prod.yml'
+#          target: '/opt/app'
+#      - name: Deploy
+#        uses: appleboy/ssh-action@v1.0.0
+#        with:
+#          host: ${{ secrets.PROD_HOST }}
+#          username: ${{ secrets.PROD_USER }}
+#          key: ${{ secrets.PROD_SSH_KEY }}
+#          script: |
+#            cd /opt/app
+#            cat > .env << ENVEOF
+#            NODE_ENV=production
+#            MONGO_URI=${{ secrets.PROD_MONGO_URI }}
+#            JWT_SECRET=${{ secrets.PROD_JWT_SECRET }}
+#            DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
+#            IMAGE_TAG=${{ needs.build.outputs.image_tag }}
+#            ENVEOF
+#            docker compose -f docker-compose.prod.yml pull
+#            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+#            docker image prune -f
